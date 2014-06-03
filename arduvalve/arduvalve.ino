@@ -63,7 +63,7 @@ byte therm_interval = 30;
 unsigned long p_therm_ms = 0;
 unsigned long c_therm_ms = 0;
 
-unsigned int switch_interval = 3000;
+unsigned int switch_interval = 10;
 unsigned long p_switch_ms = 0;
 unsigned long c_switch_ms = 0;
 
@@ -125,7 +125,7 @@ void loop() {
   temp = getTemp();
 
   c_therm_ms = millis();
-  c_therm_ms = millis();
+  c_switch_ms = millis();
 
   if ( c_therm_ms - p_therm_ms > therm_interval*1000 ) {
 
@@ -136,7 +136,7 @@ void loop() {
 
   if ( onSwitch == ALL_OFF ){
 
-    checkThermostat();
+	  checkThermostat();
 
   }
   else
@@ -307,7 +307,7 @@ inline boolean in_range( float temp ){
 
 
 void checkThermostat() {
- switch_interval = abs(curr_temp - last_temp);
+ //switch_interval = abs(curr_temp - last_temp);
  if ( above_range(curr_temp) ) { digitalWrite(COLD_PIN, LOW); digitalWrite(WARM_PIN, HIGH); onSwitch = COLD_PIN; p_switch_ms = millis(); return;}
  if ( below_range(curr_temp) ) { digitalWrite(WARM_PIN, LOW); digitalWrite(COLD_PIN, HIGH); onSwitch = WARM_PIN; p_switch_ms = millis(); return;}
  if ( in_range(curr_temp) ) { digitalWrite(WARM_PIN, HIGH); digitalWrite(COLD_PIN, HIGH); onSwitch = ALL_OFF; return;}
