@@ -74,11 +74,11 @@ MENU_VALUE temp_delta_value = { TYPE_FLOAT_100, 2,     0.2 ,     MENU_TARGET(&te
 MENU_VALUE therm_interval_value = { TYPE_BYTE, 0,     0,     MENU_TARGET(&therm_interval), THERM_INTERVAL_ADDR };
 
                     //        LABEL           TYPE        LENGTH    TARGET
-MENU_ITEM item_set_tempme    = { {"Set Temperature"},   ITEM_VALUE,  0,        MENU_TARGET(&set_temp_value) };
-MENU_ITEM item_temp_deltame    = { {"Set Delta"},   ITEM_VALUE,  0,        MENU_TARGET(&temp_delta_value) };
-MENU_ITEM item_therm_intervalme    = { {"Set Delay"},   ITEM_VALUE,  0,        MENU_TARGET(&therm_interval_value) };
-MENU_ITEM item_resetme   = { {"Reset values"},  ITEM_ACTION, 0,        MENU_TARGET(resetValues) };
-MENU_ITEM item_exitme   = { {"Exit"},  ITEM_ACTION, 0,        MENU_TARGET(uiQwkScreen) };
+MENU_ITEM item_set_tempme = { {"Set Temperature"}, ITEM_VALUE, 0, MENU_TARGET(&set_temp_value) };
+MENU_ITEM item_temp_deltame = { {"Set Delta"}, ITEM_VALUE, 0, MENU_TARGET(&temp_delta_value) };
+MENU_ITEM item_therm_intervalme = { {"Set Delay"}, ITEM_VALUE, 0, MENU_TARGET(&therm_interval_value) };
+MENU_ITEM item_resetme = { {"Reset values"}, ITEM_ACTION, 0, MENU_TARGET(resetValues) };
+MENU_ITEM item_exitme = { {"Exit"}, ITEM_ACTION, 0, MENU_TARGET(uiQwkScreen) };
 
                    //        List of items in menu level
 MENU_LIST const root_list[]   = { &item_set_tempme, &item_temp_deltame, &item_therm_intervalme, &item_resetme, &item_exitme };
@@ -306,10 +306,10 @@ inline boolean in_range( float temp ){
 }
 
 
-int checkThermostat() {
+void checkThermostat() {
  switch_interval = abs(curr_temp - last_temp);
- if ( above_range(curr_temp) ) { digitalWrite(COLD_PIN, LOW); digitalWrite(WARM_PIN, HIGH); onSwitch = COLD_PIN; p_switch_ms = millis(); }
- if ( below_range(curr_temp) ) { digitalWrite(WARM_PIN, LOW); digitalWrite(COLD_PIN, HIGH); onSwitch = WARM_PIN; p_switch_ms = millis(); }
- if ( in_range(curr_temp) ) { digitalWrite(WARM_PIN, HIGH); digitalWrite(COLD_PIN, HIGH); onSwitch = ALL_OFF;}
+ if ( above_range(curr_temp) ) { digitalWrite(COLD_PIN, LOW); digitalWrite(WARM_PIN, HIGH); onSwitch = COLD_PIN; p_switch_ms = millis(); return;}
+ if ( below_range(curr_temp) ) { digitalWrite(WARM_PIN, LOW); digitalWrite(COLD_PIN, HIGH); onSwitch = WARM_PIN; p_switch_ms = millis(); return;}
+ if ( in_range(curr_temp) ) { digitalWrite(WARM_PIN, HIGH); digitalWrite(COLD_PIN, HIGH); onSwitch = ALL_OFF; return;}
  last_temp = curr_temp;
 }
