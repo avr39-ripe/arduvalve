@@ -137,16 +137,16 @@ void loop() {
   if ( onSwitch == ALL_OFF ){
 
 	  checkThermostat();
-
+	  Serial.println("check thermo");
   }
-  else
+  else {
     if ( c_switch_ms - p_switch_ms > switch_interval*1000 ) {
-
+    Serial.println(onSwitch);
       digitalWrite(onSwitch, HIGH);
       onSwitch = ALL_OFF;
 
     }
-
+  }
 
   if( hideMenu ) {
     Menu.enable(false);
