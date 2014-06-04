@@ -91,9 +91,9 @@ OneWire ds(OW_PIN);
 OMMenuMgr Menu(&menu_root);
 
 void setup() {
-#ifdef DEBUG
+//#ifdef DEBUG
   Serial.begin(9600);
-#endif
+//#endif
 
 
   if( OMEEPROM::saved() )
@@ -131,15 +131,14 @@ void loop() {
 
     p_therm_ms = c_therm_ms;
     curr_temp = temp;
+    if ( onSwitch == ALL_OFF ){
 
+    	  checkThermostat();
+    	  Serial.println("check thermo");
+      }
   }
 
-  if ( onSwitch == ALL_OFF ){
-
-	  checkThermostat();
-	  Serial.println("check thermo");
-  }
-  else {
+  if ( !(onSwitch == ALL_OFF) ){
     if ( c_switch_ms - p_switch_ms > switch_interval*1000 ) {
     Serial.println(onSwitch);
       digitalWrite(onSwitch, HIGH);
