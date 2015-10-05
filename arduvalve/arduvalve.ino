@@ -52,8 +52,8 @@ byte hideMenu = 1;
 #define ALL_OFF 255
 byte onSwitch = ALL_OFF;
 
-float set_temp = 26.07;
-float temp_delta = 0.5;
+float set_temp = 33.00;
+float temp_delta = 2;
 
 float curr_temp;
 float last_temp;
@@ -63,7 +63,7 @@ byte therm_interval = 30;
 unsigned long p_therm_ms = 0;
 unsigned long c_therm_ms = 0;
 
-unsigned int switch_interval = 10;
+unsigned int switch_interval = 5;
 unsigned long p_switch_ms = 0;
 unsigned long c_switch_ms = 0;
 
