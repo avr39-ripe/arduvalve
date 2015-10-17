@@ -11,6 +11,20 @@ uint8_t _temp_counter = 0;
 float _temp_accum = 0;
 float _mode_curr_temp = 26.07;
 
+//Sensor indexes
+enum SensorIndexes {VALVE = 0u, TANK = 1u};
+
+struct temp_sensor
+{
+  byte addr[8];
+  uint8_t counter;
+  float accum;
+  float value;
+};
+
+temp_sensor temp_sensors[] = {{{0x28, 0xF2, 0x78, 0xCD, 0x05, 0x00, 0x00, 0xC0},0,0,26.07},
+                             {{0x28, 0x9D, 0x14, 0x3E, 0x00, 0x00, 0x00, 0xDB},0,0,26.07}};
+
 const byte OW_PIN = 6;
 const byte WARM_PIN = 2;
 const byte COLD_PIN = 3;
@@ -54,8 +68,8 @@ void setup() {
 void loop() {
 
 //  temp = getTemp();
-getTemp();
-temp = _mode_curr_temp;
+getTemp(VALVE);
+temp = temp_sensors[VALVE].value;
 
   c_therm_ms = millis();
   c_switch_ms = millis();
@@ -63,9 +77,6 @@ temp = _mode_curr_temp;
   if ( c_therm_ms - p_therm_ms > therm_interval*1000 ) {
 
     p_therm_ms = c_therm_ms;
-    
-//    getTemp();
-//    temp = _mode_curr_temp;
     
     curr_temp = temp;
     if ( onSwitch == ALL_OFF ){
@@ -132,26 +143,26 @@ temp = _mode_curr_temp;
 //
 //}
 
-void getTemp()
+void getTemp(uint8_t sensor_id)
 {
   byte _temp_data[12];
   
   ds.reset();
-  ds.skip();
+  ds.select(temp_sensors[sensor_id].addr);
   ds.write(0x4e); // write scratchpad cmd
   ds.write(0xff); // write scratchpad 0
   ds.write(0xff); // write scratchpad 1
   ds.write(0b00111111); // write scratchpad config
 
   ds.reset();
-  ds.skip();
+  ds.select(temp_sensors[sensor_id].addr);
   ds.write(0x44); // start conversion
   
   delay(190);
   
   ds.reset();
 //	ds.select(temp_sensors[n].addr);
-  ds.skip();
+  ds.select(temp_sensors[sensor_id].addr);
   ds.write(0xBE); // Read Scratchpad
 
   for (uint8_t i = 0; i < 9; i++)
@@ -162,30 +173,33 @@ void getTemp()
   if (OneWire::crc8(_temp_data, 8) != _temp_data[8])
   {
 	Serial.println("DS18B20 temp crc error!");
-	_temp_counter = 0;
-	_temp_accum = 0;
-	getTemp();
+	temp_sensors[sensor_id].counter = 0;
+	temp_sensors[sensor_id].accum = 0;
+	getTemp(sensor_id);
 	return;
 }
 	float tempRead = ((_temp_data[1] << 8) | _temp_data[0]); //using two's compliment
-	if (_temp_counter < temp_reads)
+	if (temp_sensors[sensor_id].counter < temp_reads)
 	{
-		_temp_counter++;
-		_temp_accum += (tempRead / 16);
+		temp_sensors[sensor_id].counter++;
+		temp_sensors[sensor_id].accum += (tempRead / 16);
 
 //		Serial.print("TA "); Serial.println(_temp_accum);
-		getTemp();
+		getTemp(sensor_id);
 		return;
 	}
 	else
 	{
-		_mode_curr_temp = _temp_accum / temp_reads;
-		_temp_counter = 0;
-		_temp_accum = 0;
+		temp_sensors[sensor_id].value = temp_sensors[sensor_id].accum / temp_reads;
+		temp_sensors[sensor_id].counter = 0;
+		temp_sensors[sensor_id].accum = 0;
 //		Serial.print("MT "); Serial.println(_mode_curr_temp);
 	}
 
-	Serial.print("_mode_curr_temp = "); Serial.println(_mode_curr_temp);
+	Serial.print("Sensor id ");
+        Serial.print(sensor_id);
+        Serial.print(" ");
+        Serial.println(temp_sensors[sensor_id].value);
 //	return _mode_curr_temp;
 }
 
