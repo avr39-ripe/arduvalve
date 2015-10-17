@@ -23,11 +23,13 @@ struct temp_sensor
 };
 
 temp_sensor temp_sensors[] = {{{0x28, 0xF2, 0x78, 0xCD, 0x05, 0x00, 0x00, 0xC0},0,0,26.07},
-                             {{0x28, 0x9D, 0x14, 0x3E, 0x00, 0x00, 0x00, 0xDB},0,0,26.07}};
+                              {{0x28, 0xD2, 0xCA, 0xCD, 0x05, 0x00, 0x00, 0xBA},0,0,26.07}};
 
 const byte OW_PIN = 6;
+const byte INPUT_PIN = 7;
 const byte WARM_PIN = 2;
 const byte COLD_PIN = 3;
+const byte PUMP_PIN = 4;
 
 #define ALL_OFF 255
 byte onSwitch = ALL_OFF;
@@ -35,9 +37,15 @@ byte onSwitch = ALL_OFF;
 float set_temp = 28.00;
 float temp_delta = 0.5;
 
+uint16_t valve_edge_ms = 7 * 1000; // time valve goes from HOT edge to COLD edge in ms
+float tank_temp_delta = 0;
+
 float curr_temp;
 float last_temp;
 float temp;
+
+uint8_t input_state = 1;
+uint8_t sleep_mode = FALSE;
 
 byte therm_interval = 30;
 unsigned long p_therm_ms = 0;
@@ -47,6 +55,9 @@ unsigned int switch_interval = 5;
 unsigned long p_switch_ms = 0;
 unsigned long c_switch_ms = 0;
 
+unsigned int input_interval = 500; //in ms!!!
+unsigned long p_input_ms = 0;
+unsigned long c_input_ms = 0;
 
 
 OneWire ds(OW_PIN);
@@ -58,41 +69,74 @@ void setup() {
 
   pinMode(WARM_PIN,OUTPUT);
   pinMode(COLD_PIN,OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
   digitalWrite(WARM_PIN, HIGH);
   digitalWrite(COLD_PIN, HIGH);
-
+  digitalWrite(PUMP_PIN, HIGH);
+  
+  pinMode(INPUT_PIN, INPUT);
+  
   //DO NOT wait for Delay at startup!
   p_therm_ms = millis() + therm_interval * 1000;
+  p_input_ms = millis() + input_interval;
+  
 }
 
-void loop() {
-
-//  temp = getTemp();
-getTemp(VALVE);
-temp = temp_sensors[VALVE].value;
-
-  c_therm_ms = millis();
-  c_switch_ms = millis();
-
-  if ( c_therm_ms - p_therm_ms > therm_interval*1000 ) {
-
-    p_therm_ms = c_therm_ms;
-    
-    curr_temp = temp;
-    if ( onSwitch == ALL_OFF ){
-
-    	  checkThermostat();
-    	  Serial.println("check thermo");
-      }
+void loop()
+{
+  getTemp(TANK);
+  
+  c_input_ms = millis();
+  
+  if ( c_input_ms - p_input_ms > input_interval )
+  {
+     input_state = digitalRead(INPUT_PIN);
+     Serial.print("Button state ");Serial.println(input_state);
   }
+  
+  if ( !input_state && (temp_sensors[TANK].value >= (set_temp - tank_temp_delta))) //BOTH input_state is ON and water in tank is HOT
+  {
+    sleep_mode = FALSE;
+    digitalWrite(PUMP_PIN, LOW); //turn ON pump
 
-  if ( !(onSwitch == ALL_OFF) ){
-    if ( c_switch_ms - p_switch_ms > switch_interval*1000 ) {
-    Serial.println(onSwitch);
-      digitalWrite(onSwitch, HIGH);
-      onSwitch = ALL_OFF;
+    getTemp(VALVE);
+    temp = temp_sensors[VALVE].value;
+  
+    c_therm_ms = millis();
+    c_switch_ms = millis();
 
+    if ( c_therm_ms - p_therm_ms > therm_interval*1000 )
+    {
+      p_therm_ms = c_therm_ms;
+      curr_temp = temp;
+      if ( onSwitch == ALL_OFF )
+      {
+        checkThermostat();
+        Serial.println("check thermo");
+      }
     }
+
+    if ( !(onSwitch == ALL_OFF) )
+    {
+      if ( c_switch_ms - p_switch_ms > switch_interval*1000 )
+      {
+        Serial.println(onSwitch);
+        digitalWrite(onSwitch, HIGH);
+        onSwitch = ALL_OFF;
+      }
+    }
+  }
+  else if (!sleep_mode) //Either inpit_state is OFF or COLD water in the tank - just go to sleep
+  {
+    Serial.println("SLEEP MODE ON");
+    sleep_mode = TRUE;
+    digitalWrite(PUMP_PIN, HIGH); //turn OFF pump
+    
+    digitalWrite(WARM_PIN, HIGH); //Enshure that WARM_PIN is OFF!!
+    
+    digitalWrite(COLD_PIN, LOW); //Turn ON and go to COLD edge
+    delay(valve_edge_ms);
+    digitalWrite(COLD_PIN, HIGH); //Turn OFF and SLEEEEP :)
   }
 }
 
