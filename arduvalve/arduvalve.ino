@@ -34,11 +34,11 @@ const byte PUMP_PIN = 4;
 #define ALL_OFF 255
 byte onSwitch = ALL_OFF;
 
-float set_temp = 28.00;
-float temp_delta = 0.5;
+float set_temp = 55.00;
+float temp_delta = 1.5;
 
-uint16_t valve_edge_ms = 7 * 1000; // time valve goes from HOT edge to COLD edge in ms
-float tank_temp_delta = 0;
+uint16_t valve_edge_ms = 130 * 1000; // time valve goes from HOT edge to COLD edge in ms
+float tank_temp_min = 40; //min TANK temperature to work, if less go to SLEEP!!
 
 float curr_temp;
 float last_temp;
@@ -51,7 +51,7 @@ byte therm_interval = 30;
 unsigned long p_therm_ms = 0;
 unsigned long c_therm_ms = 0;
 
-unsigned int switch_interval = 5;
+unsigned int switch_interval = 10;
 unsigned long p_switch_ms = 0;
 unsigned long c_switch_ms = 0;
 
@@ -94,7 +94,7 @@ void loop()
      Serial.print("Button state ");Serial.println(input_state);
   }
   
-  if ( !input_state && (temp_sensors[TANK].value >= (set_temp - tank_temp_delta))) //BOTH input_state is ON and water in tank is HOT
+  if ( !input_state && (temp_sensors[TANK].value >= tank_temp_min)) //BOTH input_state is ON and water in tank is HOT
   {
     sleep_mode = FALSE;
     digitalWrite(PUMP_PIN, LOW); //turn ON pump
